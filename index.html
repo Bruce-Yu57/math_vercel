@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數學素養導向大師 (Vercel 版)</title>
+    
+    <!-- 1. 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 載入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. 載入 Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 4. 載入 KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.5s ease-out; }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fade-in-up 0.5s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==========================================
+        // Vercel 版：前端完全不需要 API Key
+        // ==========================================
+        
+        // 圖示組件 (SVG Icons)
+        const IconBase = ({ d, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {d}
+            </svg>
+        );
+
+        const BookOpen = (p) => <IconBase {...p} d={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />;
+        const RefreshCw = (p) => <IconBase {...p} d={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></>} />;
+        const ArrowRight = (p) => <IconBase {...p} d={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
+        const ArrowLeft = (p) => <IconBase {...p} d={<><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>} />;
+        const CheckCircle2 = (p) => <IconBase {...p} d={<><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></>} />;
+        const Edit3 = (p) => <IconBase {...p} d={<><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></>} />;
+        const ImageIcon = (p) => <IconBase {...p} d={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></>} />;
+        const Type = (p) => <IconBase {...p} d={<><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></>} />;
+        const Calculator = (p) => <IconBase {...p} d={<><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></>} />;
+        const Send = (p) => <IconBase {...p} d={<><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>} />;
+        const Loader2 = (p) => <IconBase {...p} d={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} className={`${p.className} animate-spin`} />;
+        const AlertCircle = (p) => <IconBase {...p} d={<><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></>} />;
+        const Copy = (p) => <IconBase {...p} d={<><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>} />;
+        const Check = (p) => <IconBase {...p} d={<polyline points="20 6 9 17 4 12"/>} />;
+
+        // ==========================================
+        // 核心邏輯：呼叫我們自己的後端 API
+        // ==========================================
+
+        async function callGemini(payload, isJson = false) {
+            // 注意：這裡改成呼叫相對路徑 /api/gemini
+            // Vercel 會自動將此請求路由到 api/gemini.js
+            const url = `/api/gemini`;
+            const delays = [1000, 2000, 4000];
+
+            for (let attempt = 0; attempt <= 3; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (isJson) {
+                        try {
+                            const text = data.candidates[0].content.parts[0].text;
+                            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                            return JSON.parse(jsonStr);
+                        } catch (e) {
+                            console.error("JSON parsing failed", e);
+                            throw new Error("無法解析 AI 回傳的 JSON 格式");
+                        }
+                    }
+                    
+                    return data.candidates[0].content.parts[0].text;
+
+                } catch (error) {
+                    if (attempt === 3) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                }
+            }
+        }
+
+        const MathDisplay = ({ content }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (containerRef.current && window.renderMathInElement) {
+                    window.renderMathInElement(containerRef.current, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
+            }, [content]);
+
+            return (
+                <div 
+                    ref={containerRef} 
+                    className="prose max-w-none text-slate-800 leading-relaxed whitespace-pre-line"
+                    dangerouslySetInnerHTML={{ __html: content }} 
+                />
+            );
+        };
+
+        function MathLiteracyMaster() {
+            const [step, setStep] = useState('input');
+            const [inputText, setInputText] = useState('');
+            const [inputImage, setInputImage] = useState(null);
+            const [analysisResult, setAnalysisResult] = useState(null);
+            const [selectedParts, setSelectedParts] = useState([]);
+            const [customPrompt, setCustomPrompt] = useState('');
+            const [generatedProblem, setGeneratedProblem] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [copied, setCopied] = useState(false);
+
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64String = reader.result.split(',')[1];
+                        const mimeType = file.type;
+                        setInputImage({ data: base64String, mimeType });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handlePaste = (e) => {
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.indexOf("image") !== -1) {
+                        const file = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64String = reader.result.split(',')[1];
+                            setInputImage({ data: base64String, mimeType: file.type });
+                        };
+                        reader.readAsDataURL(file);
+                        e.preventDefault();
+                    }
+                }
+            };
+
+            const analyzeProblem = async () => {
+                if (!inputText && !inputImage) {
+                    setError("請輸入題目文字或上傳/貼上圖片");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                setStep('analyzing');
+
+                try {
+                    const userPrompt = `
+                        你是一位專業的數學老師。請分析以下數學題目（可能是文字或圖片）。
+                        請識別其核心「數學概念」，並將題目資訊拆解為以下三個部分：
+                        a. 背景 (Background): 題目的情境或故事背景（如果是純數學題，可能為無）。
+                        b. 條件 (Conditions): 題目給予的數字、幾何圖形描述、假設等數據。
+                        c. 提問 (Question): 題目要求解出的答案或目標。
+
+                        請務必以 JSON 格式回傳，格式如下：
+                        {
+                        "concept": "核心數學概念",
+                        "background": "背景描述",
+                        "conditions": "條件清單",
+                        "question": "提問內容",
+                        "original_text": "辨識出的完整題目文字"
+                        }
+                    `;
+
+                    const parts = [{ text: userPrompt }];
+                    if (inputText) parts.push({ text: `題目文字：${inputText}` });
+                    if (inputImage) {
+                        parts.push({
+                        inlineData: {
+                            mimeType: inputImage.mimeType,
+                            data: inputImage.data
+                        }
+                        });
+                    }
+
+                    const payload = {
+                        contents: [{ parts }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
+
+                    const result = await callGemini(payload, true);
+                    setAnalysisResult(result);
+                    setStep('review');
+                } catch (err) {
+                    setError(err.message || "分析失敗，請稍後再試");
+                    setStep('input');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const togglePart = (part) => {
+                if (selectedParts.includes(part)) {
+                    setSelectedParts(selectedParts.filter(p => p !== part));
+                } else {
+                    setSelectedParts([...selectedParts, part]);
+                }
+            };
+
+            const generateLiteracyProblem = async () => {
+                if (selectedParts.length === 0) {
+                    setError("請至少選擇一個要改寫的部分");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                setStep('generating');
+
+                try {
+                    const prompt = `
+                        你是一位數學素養導向大師。請將原本的「原形題」改寫為符合 PISA 或 108 課綱精神的「素養導向試題」。
+                        
+                        原題資訊：
+                        - 核心概念：${analysisResult.concept}
+                        - 原背景：${analysisResult.background}
+                        - 原條件：${analysisResult.conditions}
+                        - 原提問：${analysisResult.question}
+
+                        使用者希望改寫的部分：${selectedParts.join(', ')}
+                        使用者改寫指令：${customPrompt || "請發揮創意，結合生活情境"}
+
+                        改寫原則：
+                        1. 生活化：將數學概念融入真實生活情境（如購物、旅遊、科學實驗、建築等）。
+                        2. 有意義：數字設計要合理，符合現實邏輯。
+                        3. 格式：請使用 Markdown 格式，數學公式請使用 LaTeX 語法 (例如 $x^2$, $$ \\frac{a}{b} $$)。
+                        
+                        **非常重要：輸出結構請務必包含以下兩個清楚區隔的部分**：
+
+                        **第一部分：【完整素養試題】** (此區塊請輸出乾淨、完整的題目內容，包含標題、情境圖片描述(若有)、文字敘述、條件數據與問題。格式要適合使用者直接複製貼上到考卷或 Word 文件中。)
+
+                        --- 分隔線 ---
+
+                        **第二部分：【素養解析與設計理念】**
+                        - 核心素養：說明這題考察了什麼數學能力。
+                        - 設計理念：說明如何結合情境。
+                        - 解題關鍵：簡略提示解題方向。
+                    `;
+
+                    const payload = {
+                        contents: [{ parts: [{ text: prompt }] }]
+                    };
+
+                    const text = await callGemini(payload, false);
+                    setGeneratedProblem(text);
+                    setStep('result');
+                } catch (err) {
+                    setError("生成失敗，請重試");
+                    setStep('review');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const copyToClipboard = async () => {
+                try {
+                    await navigator.clipboard.writeText(generatedProblem);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                } catch (err) {
+                    console.error('Failed to copy!', err);
+                    setError("複製失敗，請手動複製");
+                }
+            };
+
+            const handleReset = () => {
+                setStep('input');
+                setInputText('');
+                setInputImage(null);
+                setAnalysisResult(null);
+                setSelectedParts([]);
+                setCustomPrompt('');
+                setGeneratedProblem('');
+                setError('');
+                setCopied(false);
+            };
+
+            const handleNext = () => {
+                handleReset();
+            };
+
+            const renderInputSection = () => (
+                <div className="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 animate-fade-in">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-bold text-slate-800 flex items-center justify-center gap-2">
+                        <BookOpen className="w-8 h-8 text-blue-600" />
+                        輸入原形題
+                        </h2>
+                        <p className="text-slate-500 mt-2">請輸入文字，或貼上/上傳題目圖片 (支援 Ctrl+V)</p>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="relative">
+                        <textarea
+                            className="w-full h-40 p-4 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-0 text-lg resize-none transition-all"
+                            placeholder="請在此輸入題目，或直接貼上圖片..."
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onPaste={handlePaste}
+                        />
+                        <div className="absolute bottom-3 right-3 text-slate-400">
+                            <Type className="w-5 h-5" />
+                        </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-dashed border-slate-300">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${inputImage ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                            <ImageIcon className="w-6 h-6" />
+                            </div>
+                            <div className="text-sm">
+                            {inputImage ? (
+                                <span className="text-green-600 font-medium">已載入圖片</span>
+                            ) : (
+                                <span className="text-slate-500">未選擇圖片</span>
+                            )}
+                            </div>
+                        </div>
+                        <label className="cursor-pointer px-4 py-2 bg-white border border-slate-300 rounded-md hover:bg-slate-50 text-sm font-medium transition-colors">
+                            選擇檔案
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
+                        </div>
+
+                        <button
+                        onClick={analyzeProblem}
+                        disabled={(!inputText && !inputImage) || loading}
+                        className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold text-lg shadow-md hover:shadow-xl hover:translate-y-[-2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                        {loading ? (
+                            <>
+                            <Loader2 className="w-6 h-6" />
+                            AI 分析中...
+                            </>
+                        ) : (
+                            <>
+                            開始分析題目
+                            <ArrowRight className="w-6 h-6" />
+                            </>
+                        )}
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderAnalysisAndReview = () => (
+                <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div className="bg-slate-800 text-white p-4 flex items-center justify-between">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                            題目結構分析
+                        </h3>
+                        <span className="bg-blue-600 text-xs px-2 py-1 rounded-full">{analysisResult?.concept}</span>
+                        </div>
+                        
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { key: 'background', label: 'a. 背景 (Background)', icon: <BookOpen className="w-5 h-5"/>, color: 'bg-amber-50 border-amber-200 text-amber-900' },
+                            { key: 'conditions', label: 'b. 條件 (Conditions)', icon: <Calculator className="w-5 h-5"/>, color: 'bg-blue-50 border-blue-200 text-blue-900' },
+                            { key: 'question', label: 'c. 提問 (Question)', icon: <AlertCircle className="w-5 h-5"/>, color: 'bg-purple-50 border-purple-200 text-purple-900' }
+                        ].map((item) => (
+                            <div key={item.key} className={`p-4 rounded-lg border ${item.color} flex flex-col h-full`}>
+                            <div className="flex items-center gap-2 font-bold mb-2 opacity-80">
+                                {item.icon}
+                                {item.label}
+                            </div>
+                            <div className="text-sm flex-grow whitespace-pre-line">
+                                {analysisResult?.[item.key] || "無"}
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
+                        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <Edit3 className="w-6 h-6 text-indigo-500" />
+                        素養導向改寫設定
+                        </h3>
+                        
+                        <p className="text-slate-600 mb-4">請問您想改寫哪一部分？（可複選 1-2 項）</p>
+                        
+                        <div className="flex flex-wrap gap-4 mb-6">
+                        {[
+                            { id: 'background', name: 'a. 背景情境' },
+                            { id: 'conditions', name: 'b. 數字條件' },
+                            { id: 'question', name: 'c. 提問方式' }
+                        ].map((option) => (
+                            <button
+                            key={option.id}
+                            onClick={() => togglePart(option.id)}
+                            className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${
+                                selectedParts.includes(option.id)
+                                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            }`}
+                            >
+                            {selectedParts.includes(option.id) && <CheckCircle2 className="w-4 h-4" />}
+                            {option.name}
+                            </button>
+                        ))}
+                        </div>
+
+                        <div className="mb-6">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                            改寫指令 (例如：改成去日本旅遊換匯的情境、改成建築測量的問題)
+                        </label>
+                        <div className="relative">
+                            <input
+                            type="text"
+                            value={customPrompt}
+                            onChange={(e) => setCustomPrompt(e.target.value)}
+                            placeholder="請輸入您的改寫想法..."
+                            className="w-full p-4 pl-4 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <Edit3 className="w-5 h-5" />
+                            </div>
+                        </div>
+                        </div>
+
+                        <button
+                        onClick={generateLiteracyProblem}
+                        disabled={loading || selectedParts.length === 0}
+                        className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-bold text-lg shadow-md hover:shadow-xl hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                        {loading ? (
+                            <>
+                            <Loader2 className="w-6 h-6" />
+                            正在發想素養題...
+                            </>
+                        ) : (
+                            <>
+                            生成素養導向試題
+                            <Send className="w-5 h-5" />
+                            </>
+                        )}
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderResult = () => (
+                <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-100">
+                        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                             <button 
+                                onClick={() => setStep('review')}
+                                className="mr-2 p-2 hover:bg-white/20 rounded-full transition"
+                                title="回到修改設定"
+                             >
+                                <ArrowLeft className="w-6 h-6" />
+                             </button>
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <BookOpen className="w-8 h-8" />
+                                素養導向試題成果
+                            </h2>
+                        </div>
+                        <div className="flex gap-2">
+                            <button 
+                            onClick={copyToClipboard}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1 backdrop-blur-sm ${
+                                copied 
+                                ? 'bg-green-500 text-white' 
+                                : 'bg-white/20 hover:bg-white/30 text-white'
+                            }`}
+                            >
+                            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            {copied ? '已複製' : '複製全文'}
+                            </button>
+                            <button 
+                            onClick={generateLiteracyProblem} 
+                            className="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1 backdrop-blur-sm"
+                            >
+                            <RefreshCw className="w-4 h-4" /> 重新生成
+                            </button>
+                        </div>
+                        </div>
+
+                        <div className="p-8 bg-slate-50 min-h-[400px]">
+                        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                            <MathDisplay content={generatedProblem} />
+                        </div>
+                        </div>
+                        
+                        <div className="p-6 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+                        <button 
+                            onClick={() => setStep('review')}
+                            className="text-slate-500 hover:text-slate-800 font-medium px-4 py-2 flex items-center gap-2"
+                        >
+                            <ArrowLeft className="w-4 h-4" /> 修改設定
+                        </button>
+                        
+                        <button
+                            onClick={handleNext}
+                            className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-lg font-bold shadow-lg transform hover:-translate-y-1 transition flex items-center gap-2"
+                        >
+                            下一題
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-100 font-sans pb-20">
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-xl">π</span>
+                        </div>
+                        <h1 className="text-xl font-bold text-slate-800 tracking-tight">數學素養導向大師</h1>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <span className={`px-2 py-1 rounded ${step === 'input' ? 'bg-blue-100 text-blue-700 font-bold' : ''}`}>1. 輸入</span>
+                        <span className="text-slate-300">→</span>
+                        <span className={`px-2 py-1 rounded ${['analyzing', 'review'].includes(step) ? 'bg-blue-100 text-blue-700 font-bold' : ''}`}>2. 分析與設定</span>
+                        <span className="text-slate-300">→</span>
+                        <span className={`px-2 py-1 rounded ${['generating', 'result'].includes(step) ? 'bg-blue-100 text-blue-700 font-bold' : ''}`}>3. 生成</span>
+                    </div>
+                    </div>
+                </header>
+
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {error && (
+                    <div className="max-w-3xl mx-auto mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r shadow-sm flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div className="text-red-700 font-medium">{error}</div>
+                    </div>
+                    )}
+
+                    {step === 'input' && renderInputSection()}
+                    {step === 'analyzing' && (
+                    <div className="flex flex-col items-center justify-center h-64">
+                        <Loader2 className="w-12 h-12 text-blue-600" />
+                        <p className="text-slate-500 text-lg mt-4">AI 正在努力理解題目結構...</p>
+                    </div>
+                    )}
+                    {step === 'review' && renderAnalysisAndReview()}
+                    {step === 'generating' && (
+                    <div className="flex flex-col items-center justify-center h-64">
+                        <Loader2 className="w-12 h-12 text-indigo-600" />
+                        <p className="text-slate-500 text-lg mt-4">正在將原形題轉化為素養情境...</p>
+                        <p className="text-slate-400 text-sm mt-2">這可能需要幾秒鐘</p>
+                    </div>
+                    )}
+                    {step === 'result' && renderResult()}
+                </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MathLiteracyMaster />);
+    </script>
+</body>
+</html>
